@@ -15,11 +15,8 @@ def main():
     # load the trained model and label binarizer from disk
     print("[INFO] loading model and label binarizer...")
     model = load_model(model_dir)
-    labels = pickle.loads(open(label_dir, "rb").read())
-
-    # with open(label_dir, "rb") as f:
-    #     rawdata = f.read()
-    # labels = pickle.loads(rawdata)
+    lb = pickle.loads(open(label_dir, "rb").read())
+  
    
     # initialize the image mean for mean subtraction along with the
     # predictions queue
@@ -59,11 +56,11 @@ def main():
         # previous predictions
         results = np.array(Q).mean(axis=0)
         i = np.argmax(results)
-        lb = labels[i]
-        act = results[i]
+        label = lb.classes_[i]        
+        
 
         # draw the activity on the output frame
-        text = "activity: {}".format(lb) 
+        text = "activity: {}".format(label) 
 
         cv2.putText(output, text, (35, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
 

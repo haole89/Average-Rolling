@@ -106,7 +106,7 @@ def main():
     # serialize the label binarizer to disk
     lable_dir = os.path.join(model_dir, "tag.pickle")
     f = open(lable_dir, "wb")
-    f.write(pickle.dumps(train_lb))
+    f.write(pickle.dumps(lb))
     f.close()
 
     return
