@@ -4,9 +4,11 @@ import numpy as np
 import pickle
 import cv2
 import os
+import time
 
-MAX_SEQ_LENGTH = 128
+MAX_SEQ_LENGTH = 10
 IMG_SIZE = 224
+
 
 def main():
 
@@ -14,24 +16,25 @@ def main():
     label_dir = os.path.join("model", "tag.pickle")
     # load the trained model and label binarizer from disk
     print("[INFO] loading model and label binarizer...")
-    model = load_model(model_dir)
-    labels = pickle.loads(open(label_dir, "rb").read())
+    model = load_model(model_dir)    
+    lb = pickle.loads(open(label_dir, "rb").read())
 
-    # with open(label_dir, "rb") as f:
-    #     rawdata = f.read()
-    # labels = pickle.loads(rawdata)
-   
     # initialize the image mean for mean subtraction along with the
-    # predictions queue
-    mean = np.array([123.68, 116.779, 103.939][::1], dtype="float32")
+    # predictions queue    
     Q = deque(maxlen=MAX_SEQ_LENGTH)
 
     # initialize the video stream, pointer to output video file, and
     # frame dimensions
-    video_path = "demo.avi"
+    video_path = "output\\input7.mp4"
     cap = cv2.VideoCapture(video_path)
-    (W, H) = (None, None)
-    writer = None
+    
+    # initialize our video writer
+    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    writer = cv2.VideoWriter("output\\output7.mp4", fourcc, 25, (640, 480))
+    # used to record the time when we processed last frame
+    prev_time = 0    
+    # used to record the time at which we processed current frame
+    new_time = 0
     # loop over frames from the video file stream
     while True:
         # read the next frame from the file
@@ -39,41 +42,54 @@ def main():
         # if the frame was not grabbed, then we have reached the end
         # of the stream
         if not ret:
-            break
-        # if the frame dimensions are empty, grab them
-        if W is None or H is None:
-            (H, W) = frame.shape[:2]
+            break       
         
         # clone the output frame, then convert it from BGR to RGB
         # ordering, resize the frame to a fixed 224x224, and then
         # perform mean subtraction
-        output = frame.copy()
+        output = cv2.resize(frame, (640, 480))
         frame = cv2.resize(frame, (IMG_SIZE, IMG_SIZE))
-        frame = frame[:, :, [2, 1, 0]].astype("float32")
-        frame -= mean
+        frame= frame.astype('float32') / 255.0 
+        frame = frame[:, :, [2, 1, 0]]
+       
         # make predictions on the frame and then update the predictions
         # queue
         preds = model.predict(np.expand_dims(frame, axis=0))[0]
+        
         Q.append(preds)
         # perform prediction averaging over the current history of
         # previous predictions
         results = np.array(Q).mean(axis=0)
         i = np.argmax(results)
-        lb = labels[i]
-        act = results[i]
+        label = lb.classes_[i]
+        acc= results[i] * 100
 
-        # draw the activity on the output frame
-        text = "activity: {}".format(lb) 
+        # # draw the activity on the output frame
+        # # time when we finish processing for this frame
+        # new_time = time.time()
+        # # Calculating the fps 
+        # # fps will be number of frame processed in given time frame
+        # # since their will be most of time error of 0.001 second
+        # # we will be subtracting it to get more accurate result
+        # fps = 1/(new_time - prev_time)
+        # prev_time = new_time    
+        # # converting the fps into integer
+        # fps = int(fps)
 
-        cv2.putText(output, text, (35, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
-
-        # # check if the video writer is None
-        # if writer is not None:
-        #     # initialize our video writer
-        #     fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-        #     writer = cv2.VideoWriter("output.mp4", fourcc, 25, (W, H), True)
-        #     # write the output frame to disk
-        #     writer.write(output)
+        # text = "Copied: {}".format(label) + "-FPS: {}".format(fps)
+        text = "Copied: {}".format(label)
+        cv2.putText(output, text, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (0, 0, 255), 2)
+        accuracy = "Accuracy: {:.2f} %".format(acc)
+        cv2.putText(output, accuracy, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (0, 0, 255), 2)
+        # rt = "FPS: {}".format(fps)
+        # cv2.putText(output, rt, (10, 130), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (0, 0, 255), 2)
+        copyright_text = "Partial-video copy detection using deep learning"
+        year_text = "HDU-AI@2022"
+        cv2.putText(output, copyright_text, (5, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        cv2.putText(output, year_text, (250, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        
+        # write the output frame to disk
+        writer.write(output)
            
         # show the output image
         cv2.imshow("Output", output)
@@ -84,7 +100,7 @@ def main():
     
     # release the file pointers
     print("[INFO] cleaning up...")
-    # writer.release()
+    writer.release()
     cap.release()
 
 if __name__ == '__main__':

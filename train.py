@@ -17,7 +17,7 @@ IMG_SIZE = 224
 
 # initialize the set of labels from the spots activity dataset we are
 # going to train our network on
-LABELS = set(["CricketShot", "PlayingCello", "Punch", "ShavingBeard", "TennisSwing"])
+LABELS = ["Lion_Laughing", "Donkey_Laughing", "Dog_Laughing"]
 
 def get_data(root_dir):
     
@@ -27,7 +27,7 @@ def get_data(root_dir):
 
     data = []
     labels = []
-    
+   
     for imagePath in image_paths:
         # extract the class label from the filename
         label = imagePath.split(os.path.sep)[-2]
@@ -39,7 +39,9 @@ def get_data(root_dir):
         # load image and resize, convert it to RGB channel ordering        
         image = cv2.imread(imagePath)
         frame = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
+        frame= frame.astype('float32') / 255.0 
         frame = frame[:, :, [2, 1, 0]]
+
         # update the data and labels lists, respectively
         data.append(frame)
         labels.append(label)
@@ -53,7 +55,7 @@ def main():
 
     print("[INFO] loading images...")
     train_dir = "data\\train"    
-    test_dir = "data\\test"
+    # test_dir = "data\\test"
 
     train_data, train_lb = get_data(train_dir)
     # test_data, test_lb = get_data(test_dir)
@@ -63,10 +65,11 @@ def main():
     lb = LabelBinarizer()
     train_lables = lb.fit_transform(train_lb)
     # test_lables = lb.fit_transform(test_lb)
-
+    # print(len(LABELS))
+    
     Rmodel = Extractor(
         img_size= IMG_SIZE,
-        nb_classes= 5
+        nb_classes= len(LABELS)
     )
 
     # Helper: Save the model.    
@@ -89,7 +92,7 @@ def main():
     history = Rmodel.model.fit(
         x= train_data,
         y= train_lables,
-        validation_split=0.25,
+        validation_split=0.3,
         epochs= NB_EPOCHS,
         batch_size= BATCH_SIZE,
         callbacks=[checkpoint, early_stopper],
@@ -106,7 +109,7 @@ def main():
     # serialize the label binarizer to disk
     lable_dir = os.path.join(model_dir, "tag.pickle")
     f = open(lable_dir, "wb")
-    f.write(pickle.dumps(train_lb))
+    f.write(pickle.dumps(lb))
     f.close()
 
     return

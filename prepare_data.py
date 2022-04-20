@@ -44,13 +44,13 @@ def prepare_all_videos(df, root_dir):
 def main():
     
     train_df = pd.read_csv(DATA_PATH + "train.csv")
-    test_df = pd.read_csv(DATA_PATH + "test.csv")
+    # test_df = pd.read_csv(DATA_PATH + "test.csv")
 
     print(f"Total videos for training: {len(train_df)}")
-    print(f"Total videos for testing: {len(test_df)}")
+    # print(f"Total videos for testing: {len(test_df)}")
     
     prepare_all_videos(train_df, DATA_PATH + "train")
-    prepare_all_videos(test_df, DATA_PATH + "test")
+    # prepare_all_videos(test_df, DATA_PATH + "test")
     
 if __name__ == '__main__':
     main()

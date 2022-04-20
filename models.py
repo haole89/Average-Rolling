@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications import NASNetMobile
 from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import AveragePooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.optimizers import SGD, Adam
@@ -24,7 +24,7 @@ class Extractor():
 
         input_tensor = Input(shape=(self.img_size, self.img_size, 3))
 
-        baseModel = MobileNetV2(
+        baseModel = NASNetMobile(
             weights="imagenet",
             include_top=False,
             input_tensor= input_tensor,
@@ -53,7 +53,7 @@ class Extractor():
         # layers to being non-trainable)
         print("[INFO] compiling model...")
         # trains fast as Adam, generalizes well as SGD. momentum=0.9
-        opt = SGD(learning_rate= 1e-3, decay=1e-3, momentum=0.9)
+        opt = SGD(learning_rate= 1e-4, decay=1e-4, momentum=0.9)
         model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
 
         return model
